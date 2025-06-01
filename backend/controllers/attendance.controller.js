@@ -4,9 +4,9 @@ import { User } from "../models/user.model.js";
 // Record punch in
 export const punchIn = async (req, res) => {
   try {
-    if (!req.id) {
-      return res.status(401).json({ msg: "User not authenticated" });
-    }
+    // if (!req.id) {
+    //   return res.status(401).json({ msg: "User not authenticated" });
+    // }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -40,9 +40,9 @@ export const punchIn = async (req, res) => {
 // Record punch out
 export const punchOut = async (req, res) => {
   try {
-    if (!req.id) {
-      return res.status(401).json({ msg: "User not authenticated" });
-    }
+    // if (!req.id) {
+    //   return res.status(401).json({ msg: "User not authenticated" });
+    // }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
