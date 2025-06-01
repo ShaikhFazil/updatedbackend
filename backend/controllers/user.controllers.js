@@ -132,12 +132,12 @@ export const login = async (req, res) => {
 
     return res
       .status(200)
-      .cookie("token", token, {
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
-        httpOnly: true,
-  secure: process.env.NODE_ENV === "production", // use HTTPS in prod
-  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-      })
+  //     .cookie("token", token, {
+  //       maxAge: 24 * 60 * 60 * 1000, // 1 day
+  //       httpOnly: true,
+  // secure: process.env.NODE_ENV === "production", // use HTTPS in prod
+  // sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  //     })
       .json({
         message: `Welcome Back ${user.fullname}`,
         user: userResponse,
