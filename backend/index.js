@@ -8,6 +8,7 @@ import companyRoute from "./routes/comapny.route.js";
 import jobRoute from "./routes/job.route.js";
 import applicationRoute from "./routes/application.route.js";
 import attendanceRoute from "./routes/attendance.route.js"
+import session from 'express-session';
 
 dotenv.config({});
 
@@ -24,6 +25,17 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+app.use(session({
+  secret: process.env.SECRET_KEY,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax'
+  }
+}));
 
 const PORT = process.env.PORT;
 
