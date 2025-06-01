@@ -47,3 +47,5 @@ app.get("/", (req, res) => {
 app.get("/", (req, res) => {
   res.json({ message: "Vercel backend is running" });
 });
+
+export default app;
