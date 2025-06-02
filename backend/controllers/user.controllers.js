@@ -127,6 +127,7 @@ export const login = async (req, res) => {
   profile: user.profile,
   role: user.role, 
   empId: user.empId,
+  token,
 };
 
 
@@ -141,6 +142,7 @@ export const login = async (req, res) => {
       .json({
         message: `Welcome Back ${user.fullname}`,
         user: userResponse,
+        token,
         success: true,
       });
   } catch (error) {
