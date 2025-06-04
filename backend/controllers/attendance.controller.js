@@ -92,7 +92,7 @@ export const getMyAttendance = async (req, res) => {
 export const getAllAttendance = async (req, res) => {
   try {
     const attendance = await Attendance.find()
-      .populate("userId", ["fullname", "email"]) 
+      .populate("userId", ["fullname", "email","empId"]) 
       .sort({ punchIn: -1 }); 
     
     res.status(200).json({
@@ -116,5 +116,40 @@ export const getAllUsers = async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
+  }
+};
+
+
+export const updateAttendance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { empId, fullname, email, punchIn, punchOut } = req.body;
+
+    const attendance = await Attendance.findById(id);
+    if (!attendance) {
+      return res.status(404).json({ msg: "Attendance record not found" });
+    }
+
+    // Update user info if provided
+    if (attendance.userId) {
+      const user = await User.findById(attendance.userId);
+      if (user) {
+        if (empId !== undefined) user.empId = empId;
+        if (fullname !== undefined) user.fullname = fullname;
+        if (email !== undefined) user.email = email;
+        await user.save();
+      }
+    }
+
+    // Always update punchIn and punchOut, even if null
+    attendance.punchIn = punchIn ? new Date(punchIn) : null;
+    attendance.punchOut = punchOut ? new Date(punchOut) : null;
+
+    await attendance.save();
+
+    res.json({ success: true, attendance });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: "Server error" });
   }
 };
