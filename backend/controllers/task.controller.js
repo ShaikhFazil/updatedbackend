@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Task } from "../models/task.model.js";
 import { User } from "../models/user.model.js";
 
@@ -5,14 +6,14 @@ import { User } from "../models/user.model.js";
 export const createTask = async (req, res) => {
   try {
     const { title, description, status, startDate, endDate } = req.body;
-    
+
     const task = new Task({
       title,
       description,
       status,
       startDate,
       endDate,
-      createdBy: req.id
+      createdBy: req.id,
     });
 
     await task.save();
@@ -23,18 +24,46 @@ export const createTask = async (req, res) => {
   }
 };
 
-// Get all tasks (admin) or user's tasks
 export const getTasks = async (req, res) => {
   try {
-    let query = {};
-    
-    // If user is not admin, only show their tasks
+        console.log("Role in request:", req.role);
+    let matchQuery = {};
+
     if (req.role !== "admin") {
-      query.createdBy = req.id;
+      matchQuery.createdBy = new mongoose.Types.ObjectId(req.id); 
     }
 
-    const tasks = await Task.find(query).populate("createdBy", "fullname email");
-    res.json(tasks);
+    const tasks = await Task.find(matchQuery).populate(
+      "createdBy",
+      "fullname email"
+    );
+
+    const statusCounts = await Task.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const countObject = {
+      Pending: 0,
+      "In Progress": 0,
+      Completed: 0,
+    };
+
+    statusCounts.forEach((entry) => {
+      countObject[entry._id] = entry.count;
+    });
+
+    countObject.total = tasks.length;
+
+    res.json({
+      tasks,
+      count: countObject,
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
@@ -55,7 +84,9 @@ export const updateTask = async (req, res) => {
 
     // Check permission - only creator or admin can update
     if (task.createdBy.toString() !== req.id && req.role !== "admin") {
-      return res.status(403).json({ msg: "Not authorized to update this task" });
+      return res
+        .status(403)
+        .json({ msg: "Not authorized to update this task" });
     }
 
     // Update task
@@ -86,7 +117,9 @@ export const deleteTask = async (req, res) => {
 
     // Check permission - only creator or admin can delete
     if (task.createdBy.toString() !== req.id && req.role !== "admin") {
-      return res.status(403).json({ msg: "Not authorized to delete this task" });
+      return res
+        .status(403)
+        .json({ msg: "Not authorized to delete this task" });
     }
 
     await Task.findByIdAndDelete(id);
