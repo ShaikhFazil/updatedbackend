@@ -2,66 +2,111 @@ import { Attendance } from "../models/attendance.modal.js";
 import { User } from "../models/user.model.js";
 
 // Record punch in
+// export const punchIn = async (req, res) => {
+//   try {
+//     if (!req.id) {
+//       return res.status(401).json({ msg: "User not authenticated" });
+//     }
+
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+
+//     const existingAttendance = await Attendance.findOne({
+//       userId: req.id,
+//       punchIn: {
+//         $gte: today,
+//         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+//       },
+//     });
+
+//     if (existingAttendance) {
+//       return res.status(400).json({ msg: "You have already punched in today" });
+//     }
+
+//     const attendance = new Attendance({
+//       userId: req.id,
+//       punchIn: new Date(),
+//     });
+
+//     await attendance.save();
+//     res.json(attendance);
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+// // Record punch out
+// export const punchOut = async (req, res) => {
+//   try {
+//     if (!req.id) {
+//       return res.status(401).json({ msg: "User not authenticated" });
+//     }
+
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+
+//     const attendance = await Attendance.findOne({
+//       userId: req.id,
+//       punchIn: {
+//         $gte: today,
+//         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+//       },
+//       punchOut: { $exists: false }
+//     });
+
+//     if (!attendance) {
+//       return res.status(400).json({ msg: "No active punch-in found for today" });
+//     }
+
+//     attendance.punchOut = new Date();
+//     await attendance.save();
+//     res.json(attendance);
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).send("Server error");
+//   }
+// };
+
 export const punchIn = async (req, res) => {
-  try {
-    if (!req.id) {
-      return res.status(401).json({ msg: "User not authenticated" });
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const existingAttendance = await Attendance.findOne({
-      userId: req.id, 
-      punchIn: {      
-        $gte: today,
-        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-      },
-    });
-
-    if (existingAttendance) {
-      return res.status(400).json({ msg: "You have already punched in today" });
-    }
-
-    const attendance = new Attendance({
-      userId: req.id,  
-      punchIn: new Date(),
-    });
-
-
-    await attendance.save();
-    res.json(attendance);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
+  const { locationName } = req.body;
+  const attendance = new Attendance({
+    userId: req.id,
+    punchIn: new Date(),
+    punchInLocationName: locationName,
+  });
+  await attendance.save();
+  res.json(attendance);
 };
 
-// Record punch out
 export const punchOut = async (req, res) => {
   try {
     if (!req.id) {
       return res.status(401).json({ msg: "User not authenticated" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
     const attendance = await Attendance.findOne({
-      userId: req.id,   
-      punchIn: {         
-        $gte: today,
-        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-      },
-      punchOut: { $exists: false } 
+      userId: req.id,
+      punchOut: { $exists: false },
+      punchIn: { $gte: startOfDay, $lt: endOfDay },
     });
 
     if (!attendance) {
-      return res.status(400).json({ msg: "No active punch-in found for today" });
+      return res
+        .status(400)
+        .json({ msg: "No active punch-in found for today" });
     }
 
     attendance.punchOut = new Date();
+    attendance.punchOutLocationName = req.body.locationName;
     await attendance.save();
+
     res.json(attendance);
   } catch (err) {
     console.error(err.message);
@@ -72,18 +117,19 @@ export const punchOut = async (req, res) => {
 // Get user's attendance
 export const getMyAttendance = async (req, res) => {
   try {
-    const attendance = await Attendance.find({ userId: req.id })
-      .sort({ punchIn: -1 }); 
-    
+    const attendance = await Attendance.find({ userId: req.id }).sort({
+      punchIn: -1,
+    });
+
     res.status(200).json({
       success: true,
-      attendance 
+      attendance,
     });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
       success: false,
-      message: "Server error"
+      message: "Server error",
     });
   }
 };
@@ -92,18 +138,18 @@ export const getMyAttendance = async (req, res) => {
 export const getAllAttendance = async (req, res) => {
   try {
     const attendance = await Attendance.find()
-      .populate("userId", ["fullname", "email","empId"]) 
-      .sort({ punchIn: -1 }); 
-    
+      .populate("userId", ["fullname", "email", "empId"])
+      .sort({ punchIn: -1 });
+
     res.status(200).json({
       success: true,
-      attendance
+      attendance,
     });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
       success: false,
-      message: "Server error"
+      message: "Server error",
     });
   }
 };
@@ -118,7 +164,6 @@ export const getAllUsers = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
-
 
 export const updateAttendance = async (req, res) => {
   try {
@@ -148,6 +193,26 @@ export const updateAttendance = async (req, res) => {
     await attendance.save();
 
     res.json({ success: true, attendance });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: "Server error" });
+  }
+};
+
+export const deleteAttendance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("Deleting attendance record:", id);
+
+    const attendance = await Attendance.findById(id);
+
+    if (!attendance) {
+      return res.status(404).json({ msg: "Attendance record not found" });
+    }
+
+    await Attendance.findByIdAndDelete(id);
+
+    res.json({ success: true, msg: "Attendance record deleted" });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: "Server error" });

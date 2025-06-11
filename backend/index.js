@@ -8,6 +8,7 @@ import companyRoute from "./routes/comapny.route.js";
 import jobRoute from "./routes/job.route.js";
 import applicationRoute from "./routes/application.route.js";
 import attendanceRoute from "./routes/attendance.route.js"
+import taskRoute from "./routes/task.routes.js"
 import session from 'express-session';
 
 dotenv.config({});
@@ -53,6 +54,7 @@ app.use("/api/v1/company", companyRoute);
 app.use("/api/v1/job", jobRoute);
 app.use("/api/v1/application", applicationRoute);
 app.use("/api/v1/attendance", attendanceRoute);
+app.use("/api/v1/task", taskRoute);
 
 app.listen(PORT, () => {
   connectDB();

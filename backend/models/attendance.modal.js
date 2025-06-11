@@ -12,5 +12,7 @@ const attendanceSchema = new mongoose.Schema({
   punchOut: {
     type: Date,
   },
+    punchInLocationName: { type: String },
+  punchOutLocationName: { type: String },
 }, { timestamps: true });
 export const Attendance = mongoose.model("Attendance", attendanceSchema);
