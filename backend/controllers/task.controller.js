@@ -13,11 +13,15 @@ export const createTask = async (req, res) => {
       status,
       startDate,
       endDate,
-      createdBy: req.id,
+      createdBy: req.id, 
     });
 
+    console.log("Creating task with createdBy:", req.id);
     await task.save();
-    res.status(201).json(task);
+    
+    // Populate before sending response
+    const populatedTask = await Task.findById(task._id).populate('createdBy', 'fullname email');
+    res.status(201).json(populatedTask);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
@@ -26,17 +30,16 @@ export const createTask = async (req, res) => {
 
 export const getTasks = async (req, res) => {
   try {
-        console.log("Role in request:", req.role);
     let matchQuery = {};
 
     if (req.role !== "admin") {
-      matchQuery.createdBy = new mongoose.Types.ObjectId(req.id); 
+      matchQuery.createdBy = new mongoose.Types.ObjectId(req.id);
     }
 
-    const tasks = await Task.find(matchQuery).populate(
-      "createdBy",
-      "fullname email"
-    );
+    const tasks = await Task.find(matchQuery).populate({
+      path: "createdBy",
+      select: "fullname email",
+    });
 
     const statusCounts = await Task.aggregate([
       { $match: matchQuery },
