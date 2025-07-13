@@ -2,99 +2,57 @@ import { Attendance } from "../models/attendance.modal.js";
 import { User } from "../models/user.model.js";
 
 // Record punch in
-// export const punchIn = async (req, res) => {
-//   try {
-//     if (!req.id) {
-//       return res.status(401).json({ msg: "User not authenticated" });
-//     }
-
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-
-//     const existingAttendance = await Attendance.findOne({
-//       userId: req.id,
-//       punchIn: {
-//         $gte: today,
-//         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-//       },
-//     });
-
-//     if (existingAttendance) {
-//       return res.status(400).json({ msg: "You have already punched in today" });
-//     }
-
-//     const attendance = new Attendance({
-//       userId: req.id,
-//       punchIn: new Date(),
-//     });
-
-//     await attendance.save();
-//     res.json(attendance);
-//   } catch (err) {
-//     console.error(err.message);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// // Record punch out
-// export const punchOut = async (req, res) => {
-//   try {
-//     if (!req.id) {
-//       return res.status(401).json({ msg: "User not authenticated" });
-//     }
-
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-
-//     const attendance = await Attendance.findOne({
-//       userId: req.id,
-//       punchIn: {
-//         $gte: today,
-//         $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-//       },
-//       punchOut: { $exists: false }
-//     });
-
-//     if (!attendance) {
-//       return res.status(400).json({ msg: "No active punch-in found for today" });
-//     }
-
-//     attendance.punchOut = new Date();
-//     await attendance.save();
-//     res.json(attendance);
-//   } catch (err) {
-//     console.error(err.message);
-//     res.status(500).send("Server error");
-//   }
-// };
-
 export const punchIn = async (req, res) => {
-  const { locationName } = req.body;
-  const attendance = new Attendance({
-    userId: req.id,
-    punchIn: new Date(),
-    punchInLocationName: locationName,
-  });
-  await attendance.save();
-  res.json(attendance);
+  try {
+    if (!req.id) {
+      return res.status(401).json({ msg: "User not authenticated" });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const existingAttendance = await Attendance.findOne({
+      userId: req.id,
+      punchIn: {
+        $gte: today,
+        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+      },
+    });
+
+    if (existingAttendance) {
+      return res.status(400).json({ msg: "You have already punched in today" });
+    }
+
+    const attendance = new Attendance({
+      userId: req.id,
+      punchIn: new Date(),
+    });
+
+    await attendance.save();
+    res.json(attendance);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
 };
 
+// Record punch out
 export const punchOut = async (req, res) => {
   try {
     if (!req.id) {
       return res.status(401).json({ msg: "User not authenticated" });
     }
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const attendance = await Attendance.findOne({
       userId: req.id,
+      punchIn: {
+        $gte: today,
+        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+      },
       punchOut: { $exists: false },
-      punchIn: { $gte: startOfDay, $lt: endOfDay },
     });
 
     if (!attendance) {
@@ -104,9 +62,7 @@ export const punchOut = async (req, res) => {
     }
 
     attendance.punchOut = new Date();
-    attendance.punchOutLocationName = req.body.locationName;
     await attendance.save();
-
     res.json(attendance);
   } catch (err) {
     console.error(err.message);

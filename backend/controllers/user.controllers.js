@@ -15,20 +15,20 @@ export const register = async (req, res) => {
     }
 
     const user = await User.findOne({ email });
-    
-        if (user) {
-          return res.status(400).json({
-            message: "User already exist with its email.",
-            success: false,
-          });
-        }
-        
-               const userCount = await User.countDocuments();
-           const empId = `EMP-${String(userCount + 1).padStart(3, "0")}`;
 
-           const hashedPassword = await bcrypt.hash(password, 10);
+    if (user) {
+      return res.status(400).json({
+        message: "User already exist with its email.",
+        success: false,
+      });
+    }
 
-             // Initialize user data without profile photo
+    const userCount = await User.countDocuments();
+    const empId = `EMP-${String(userCount + 1).padStart(3, "0")}`;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Initialize user data without profile photo
     const userData = {
       fullname,
       email,
@@ -41,7 +41,7 @@ export const register = async (req, res) => {
     // const fileuri = getDataUri(file);
     // const cloudResponse = await cloudinary.uploader.upload(fileuri.content);
 
-       // Only process profile photo if file exists
+    // Only process profile photo if file exists
     if (req.file) {
       const fileuri = getDataUri(req.file);
       const cloudResponse = await cloudinary.uploader.upload(fileuri.content);
@@ -51,7 +51,6 @@ export const register = async (req, res) => {
     }
 
     await User.create(userData);
-
 
     // await User.create({
     //   fullname,
@@ -70,7 +69,7 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-     return res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
       success: false,
     });
@@ -120,24 +119,23 @@ export const login = async (req, res) => {
     });
 
     const userResponse = {
-  _id: user._id,
-  fullname: user.fullname,
-  email: user.email,
-  phoneNumber: user.phoneNumber,
-  profile: user.profile,
-  role: user.role, 
-  empId: user.empId,
-  token,
-};
-
+      _id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      profile: user.profile,
+      role: user.role,
+      empId: user.empId,
+      token,
+    };
 
     return res
       .status(200)
       .cookie("token", token, {
         maxAge: 24 * 60 * 60 * 1000, // 1 day
         httpOnly: true,
-     secure: process.env.NODE_ENV === "production",
-  sameSite: "None",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "None",
       })
       .json({
         message: `Welcome Back ${user.fullname}`,
@@ -209,5 +207,52 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+  }
+};
+
+// Get all users (admin only)
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching users" });
+  }
+};
+
+// Update user (admin only)
+export const updateUserByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fullname, email, phoneNumber, role } = req.body;
+    const user = await User.findByIdAndUpdate(
+      id,
+      { fullname, email, phoneNumber, role },
+      { new: true }
+    ).select("-password");
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to update user" });
+  }
+};
+
+// Delete user (admin only)
+export const deleteUserByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndDelete(id);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    res
+      .status(200)
+      .json({ success: true, message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to delete user" });
   }
 };
