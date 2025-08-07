@@ -36,16 +36,18 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-app.use(session({
-  secret: process.env.SECRET_KEY,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'lax'
-  }
-}));
+app.use(
+  session({
+    secret: process.env.SECRET_KEY,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+    },
+  })
+);
 
 const PORT = process.env.PORT;
 
@@ -56,7 +58,7 @@ app.use("/api/v1/job", jobRoute);
 app.use("/api/v1/application", applicationRoute);
 app.use("/api/v1/attendance", attendanceRoute);
 app.use("/api/v1/task", taskRoute);
-app.use("/api/leave",leaveRoute)
+app.use("/api/leave", leaveRoute);
 
 app.listen(PORT, () => {
   connectDB();
